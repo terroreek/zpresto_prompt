@@ -1,0 +1,81 @@
+#
+# A simple theme that displays relevant, contextual information.
+#
+# Authors:
+#   Tareeq Ali <terror.eek@gmail.com>
+#
+# Screenshots:
+#   http://i.imgur.com/nBEEZ.png
+#
+
+# Load dependencies.
+pmodload 'helper'
+
+function prompt_terror_pwd {
+  local pwd="${PWD/#$HOME/~}"
+
+  if [[ "$pwd" == (#m)[/~] ]]; then
+    _prompt_terror_pwd="$MATCH"
+    unset MATCH
+  else
+    _prompt_terror_pwd="${${${(@j:/:M)${(@s:/:)pwd}##.#?}:h}%/}/${pwd:t}"
+  fi
+}
+
+function prompt_terror_precmd {
+  setopt LOCAL_OPTIONS
+  unsetopt XTRACE KSH_ARRAYS
+
+  # Format PWD.
+  prompt_terror_pwd
+
+  # Get Git repository information.
+  if (( $+functions[git-info] )); then
+    git-info
+  fi
+}
+
+function prompt_terror_setup {
+  setopt LOCAL_OPTIONS
+  unsetopt XTRACE KSH_ARRAYS
+  prompt_opts=(cr percent subst)
+
+  # Load required functions.
+  autoload -Uz add-zsh-hook
+
+  # Add hook for calling git-info before each command.
+  add-zsh-hook precmd prompt_terror_precmd
+
+  # Set editor-info parameters.
+  zstyle ':prezto:module:editor:info:completing' format '%B%F{red}...%f%b'
+  zstyle ':prezto:module:editor:info:keymap:primary' format ' %B%F{red}❯%F{red}❯%F{red}❯%f%b'
+  zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format ' %F{red}♺%f'
+  zstyle ':prezto:module:editor:info:keymap:alternate' format ' %B%F{red}❮%F{red}❮%F{red}❮%f%b'
+
+  # Set git-info parameters.
+  zstyle ':prezto:module:git:info' verbose 'yes'
+  zstyle ':prezto:module:git:info:action' format ':%%B%F{black}%s%f%%b'
+  zstyle ':prezto:module:git:info:added' format ' %%B%F{black}✚%f%%b'
+  zstyle ':prezto:module:git:info:ahead' format ' %%B%F{black}⬆%f%%b'
+  zstyle ':prezto:module:git:info:behind' format ' %%B%F{black}⬇%f%%b'
+  zstyle ':prezto:module:git:info:branch' format ':%F{red}%b%f'
+  zstyle ':prezto:module:git:info:commit' format ':%F{black}%.7c%f'
+  zstyle ':prezto:module:git:info:deleted' format ' %%B%F{black}✖%f%%b'
+  zstyle ':prezto:module:git:info:modified' format ' %%B%F{black}✱%f%%b'
+  zstyle ':prezto:module:git:info:position' format ':%F{black}%p%f'
+  zstyle ':prezto:module:git:info:renamed' format ' %%B%F{black}➜%f%%b'
+  zstyle ':prezto:module:git:info:stashed' format ' %%B%F{black}✭%f%%b'
+  zstyle ':prezto:module:git:info:unmerged' format ' %%B%F{black}═%f%%b'
+  zstyle ':prezto:module:git:info:untracked' format ' %%B%F{black}◼%f%%b'
+  zstyle ':prezto:module:git:info:keys' format \
+    'prompt' ' %F{red}git%f$(coalesce "%b" "%p" "%c")%s' \
+    'rprompt' '%A%B%S%a%d%m%r%U%u'
+
+  # Define prompts.
+  PROMPT='%B%F{red}%n%f@%F{blue}%m%f%b %F{red}${_prompt_terror_pwd}%f${git_info:+${(e)git_info[prompt]}}%(!. %B%F{red}#%f%b.)${editor_info[keymap]} '
+  RPROMPT='${editor_info[overwrite]}%(?:: %F{red}⏎%f)${VIM:+" %B%F{red}V%f%b"}${git_info[rprompt]}'
+  SPROMPT='zsh: correct %F{red}%R%f to %F{red}%r%f [nyae]? '
+}
+
+prompt_terror_setup "$@"
+
